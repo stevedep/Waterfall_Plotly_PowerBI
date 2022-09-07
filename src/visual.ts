@@ -37,9 +37,16 @@ import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnume
 //plotly
 import Plotly from 'plotly.js-dist';
 import ISelectionManager = powerbi.extensibility.ISelectionManager; import ISelectionId = powerbi.visuals.ISelectionId; import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-
-
 import { VisualSettings } from "./settings";
+
+import {
+    select as d3Select
+} from "d3-selection";
+declare var require: any
+const getEvent = () => require("d3-selection").event;
+import * as d3 from "d3";
+
+
 export class Visual implements IVisual {
     private target: HTMLElement;
     private updateCount: number;
@@ -47,29 +54,23 @@ export class Visual implements IVisual {
     private textNode: Text;
     private host: IVisualHost;
     private selectionManager: ISelectionManager;
+    svg: any;
 
     constructor(options: VisualConstructorOptions) {
-
         this.host = options.host;
-        this.selectionManager = this.host.createSelectionManager();
-        console.log('Visual constructor', options);
-        this.target = options.element;
-        this.updateCount = 0;
-        if (document) {
-            const new_p: HTMLElement = document.createElement("p");
-            new_p.appendChild(document.createTextNode("Hello World:"));
-            const new_em: HTMLElement = document.createElement("em");
-            this.textNode = document.createTextNode(this.updateCount.toString());
-            new_em.appendChild(this.textNode);
-            new_p.appendChild(new_em);
-            this.target.appendChild(new_p);
-        }
+       
     }
 
     public update(options: VisualUpdateOptions) {
+        
+        var gd = document.querySelector('div');
+        gd.innerHTML = "";
+        this.selectionManager = this.host.createSelectionManager(); // added for selections    
+
         let selectionManager = this.selectionManager;
         this.settings = Visual.parseSettings(options && options.dataViews && options.dataViews[0]);
-        console.log('Visual update', options);
+       // console.log('Visual update', options);
+        
         if (this.textNode) {
             this.textNode.textContent = (this.updateCount++).toString();
         }
@@ -85,7 +86,7 @@ export class Visual implements IVisual {
             return [index, element, selectionId]
         }, this) //add index of value
 
-        console.log(map2);
+        //console.log(map2);
 
         var gd = document.querySelector('div');
         var data = [
@@ -107,9 +108,6 @@ export class Visual implements IVisual {
             }
         ];
         var layout = {
-            title: {
-                text: "Profit and loss statement 2018<br>waterfall chart displaying positive and negative"
-            },
             yaxis: {
                 type: "category",
                 autorange: "reversed"
@@ -117,11 +115,29 @@ export class Visual implements IVisual {
             xaxis: {
                 type: "linear"
             },
-            margin: { l: 150 },
-            showlegend: true
+            margin: { l: 150, t: 0, r: 10, b:50 },
+            showlegend: false
         }
         Plotly.newPlot(gd, data, layout);
+        this.svg = document.querySelector('svg.main-svg');
+        this.svg.sm = this.host.createSelectionManager();
+        
+        //this.selectionManager = 
+        this.svg.addEventListener('contextmenu', function emit(event) {
+            var bounds = event.target.getBoundingClientRect();
+            var x = event.clientX - bounds.left;
+            var y = event.clientY - bounds.top;
+            this.sm.showContextMenu({}, {
+                x: x,
+                y: y
+            });
+           event.preventDefault();
 
+        });
+
+
+        //this.handleContextMenu();
+        //console.log(this.svg);
         var d = document.querySelectorAll("g.cartesianlayer > g > g.plot > g > g > g.points > g");
 
         for (let i = 0; i < d.length; i++) {
@@ -138,6 +154,21 @@ export class Visual implements IVisual {
 
     }
 
+    /*
+    //added for contextmenu
+    private handleContextMenu() {
+        this.svg.on('contextmenu', () => {
+            const mouseEvent: MouseEvent = getEvent();
+            const eventTarget: EventTarget = mouseEvent.target;            
+            let dataPoint: any = d3Select(<d3.BaseType>eventTarget).datum();
+            this.selectionManager.showContextMenu(dataPoint ? dataPoint.selectionId : {}, {
+                x: mouseEvent.clientX,
+                y: mouseEvent.clientY
+            });
+            mouseEvent.preventDefault();     
+        });     
+    }
+    */
     private static parseSettings(dataView: DataView): VisualSettings {
         return <VisualSettings>VisualSettings.parse(dataView);
     }
