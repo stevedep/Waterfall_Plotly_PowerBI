@@ -10,6 +10,11 @@ Your use of the Plotly Waterfall Power BI Visual is subject to the term and cond
 
 Policy. Please read this Policy before using the Plotly Waterfall Power BI Visual. 
 
+### 0. Solution Design and Privacy Impact
+
+the Plotly Waterfall Power BI visual loads the Plotly JS Visual from this location: https://www.npmjs.com/package/plotly.js-dist
+This policy is applicable to the data processing done AFTER loading this visual. This relates to the code in this GitHub repository. To understand any privacy related data processing done by the Plotly JS visual, please refer to: https://plotly.com/privacy/
+
 ### 1.  Use of Data:
 
 The Plotly Waterfall Power BI Visual uses information that is provided through the
